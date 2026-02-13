@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Photo Tour</title>
+<style>
+  body {
+    margin: 0;
+    background: black;
+    color: white;
+    overflow-x: hidden;
+  }
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    padding: 20px;
+  }
+  .gallery img {
+    max-width: 90%;
+    max-height: 80vh;
+    border-radius: 10px;
+    cursor: zoom-in;
+    transition: transform 0.3s ease;
+  }
+  .zoomed {
+    transform: scale(2);
+    cursor: zoom-out;
+  }
+  .back-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: white;
+    color: black;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+<a href="javascript:history.back()" class="back-btn">← Back</a>
+<div class="gallery" id="gallery"></div>
+
+<script>
+  const images = JSON.parse(localStorage.getItem('photoTourImages') || "[]");
+  const gallery = document.getElementById('gallery');
+
+  if (images.length === 0) {
+    gallery.innerHTML = "<p>No images available</p>";
+  } else {
+    images.forEach(src => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.onclick = () => img.classList.toggle('zoomed');
+      gallery.appendChild(img);
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Property Listings</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .listing {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+    .property-img {
+      width: 100%;
+      max-width: 400px;
+      height: auto;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+    .amenities {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .amenity {
+      background: #e0e0e0;
+      border-radius: 20px;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 14px;
+    }
+    .amenity img {
+      width: 18px;
+      height: 18px;
+    }
+    button {
+      margin-top: 10px;
+      margin-right: 10px;
+      padding: 5px 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🗂️ My Property Listings</h2>
+  <div id="listingContainer"></div>
+
+  <script>
+    const container = document.getElementById("listingContainer");
+
+    async function fetchProperties() {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/house/my-properties", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const listings = await res.json();
+        container.innerHTML = "";
+
+        listings.forEach(property => {
+          // ✅ Amenities
+          let amenitiesHTML = "<i>No amenities listed</i>";
+          if (Array.isArray(property.amenities) && property.amenities.length > 0) {
+  amenitiesHTML = property.amenities.map(a => `
+    <div class="amenity">
+      <img src="${a.iconUrl}" alt="${a.type}" />
+      <span>${a.type}</span>
+    </div>
+  `).join('');
+}
+
+
+          // ✅ First Image
+         let firstImage = "";
+if (
+  Array.isArray(property.images) &&
+  property.images.length > 0 &&
+  Array.isArray(property.images[0].urls) &&
+  property.images[0].urls.length > 0
+) {
+  firstImage = `<img src="${property.images[0].urls[0]}" class="property-img" alt="Property Image">`;
+}
+
+          // ✅ Render each listing
+          container.innerHTML += `
+            <div class="listing">
+              <h3>${property.title || "No Title"}</h3>
+              <p>${property.description || "No Description"}</p>
+              <p><strong>📍 Location:</strong> ${property.location || "N/A"}</p>
+              <p><strong>💰 Price:</strong> ₹${property.pricePerNight || "0"}</p>
+              ${firstImage}
+              <div class="amenities">${amenitiesHTML}</div>
+              <button onclick="edit('${property._id}')">✏️ Edit</button>
+              <button onclick="deleteListing('${property._id}')">🗑️ Delete</button>
+            </div>
+          `;
+        });
+
+      } catch (err) {
+        console.error("❌ Error fetching listings:", err);
+        container.innerHTML = "<p>❌ Failed to load your properties. Please try again.</p>";
+      }
+    }
+
+    async function deleteListing(id) {
+      const token = localStorage.getItem("token");
+      try {
+        const res = await fetch(`http://localhost:5000/api/house/delete/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          alert("❌ Failed to delete listing");
+          return;
+        }
+
+        alert("🗑️ Listing deleted");
+        fetchProperties(); // Reload updated list
+      } catch (err) {
+        console.error("❌ Error deleting listing:", err);
+      }
+    }
+
+    function edit(id) {
+      window.location.href = `edit-property.html?id=${id}`;
+    }
+
+    // 🚀 Load listings on page load
+    fetchProperties();
+  </script>
+</body>
+</html>

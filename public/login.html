@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    position: relative;
+    overflow: hidden;
+  }
+
+  body::before, body::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+  }
+  body::before { width: 250px; height: 250px; top: -50px; left: -50px; }
+  body::after { width: 200px; height: 200px; bottom: -50px; right: -50px; }
+
+  .container {
+    background: rgba(255,255,255,0.95);
+    padding: 40px 30px;
+    border-radius: 20px;
+    box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+    width: 350px;
+    max-width: 90%;
+    text-align: center;
+    animation: fadeIn 0.8s ease-in-out;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  .container img { width: 80px; margin-bottom: 15px; }
+  h2 { margin-bottom: 20px; font-size: 28px; font-weight: 600; color: #4B0082; }
+
+  .input-box { position: relative; margin: 12px 0; }
+  .input-box input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; font-size: 15px; }
+  .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 14px; color: #666; }
+
+  .options { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin: 5px 0 15px 0; }
+  button { width: 100%; padding: 12px; border: none; border-radius: 50px; background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; font-size: 16px; cursor: pointer; transition: 0.3s; }
+  button:hover { background: linear-gradient(45deg, #8e44ad, #9b59b6); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .signup { margin-top: 18px; font-size: 14px; }
+  .signup a { color: #8e44ad; text-decoration: none; }
+
+  .message { margin-top: 10px; font-size: 14px; color: red; display: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <img src="https://img.icons8.com/ios-filled/100/000000/real-estate.png" alt="House">
+  <h2>Sign In</h2>
+
+  <form id="loginForm">
+    <div class="input-box">
+      <input type="email" id="email" placeholder="Email" required>
+    </div>
+    <div class="input-box">
+      <input type="password" id="password" placeholder="Password" required>
+      <span class="toggle-password" id="togglePassword">👁</span>
+    </div>
+
+    <div class="options">
+      <label><input type="checkbox"> Remember Me</label>
+      <a href="forgetpassword.html">Forgot Password?</a>
+    </div>
+
+    <button type="submit" id="loginBtn">Login</button>
+    <div class="message" id="message"></div>
+  </form>
+
+  <div class="signup">
+    Don't have an account? <a href="register.html">Sign Up</a>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyD8DOpnDhFMXXVOscjhLoW3If0ZhlKUBpo",
+    authDomain: "staynotify-61da5.firebaseapp.com",
+    projectId: "staynotify-61da5",
+    storageBucket: "staynotify-61da5.appspot.com",
+    messagingSenderId: "580938949690",
+    appId: "1:580938949690:web:2b6234577a9cbe7aad4103",
+    measurementId: "G-RXTK4F53FS"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
+
+  // Input references
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+
+  // Toggle password visibility
+  document.getElementById('togglePassword').addEventListener('click', () => {
+    passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+  });
+
+  // Show message
+  function showMessage(msg) {
+    const messageBox = document.getElementById('message');
+    messageBox.textContent = msg;
+    messageBox.style.display = 'block';
+  }
+
+  function resetButton() {
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = false;
+    btn.textContent = 'Login';
+  }
+
+  // Request FCM token and save to backend
+  async function requestFCMToken() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+      const token = await messaging.getToken({
+        vapidKey: "BBrUIaTwtbgJ217hXhWuWx3rpB4jU38qTqqjLmQMqZNX8t3p53mRNAUZBddCEoZRRyS2hfVwxj83T4AoBlMSyrc"
+      });
+      if (!token) return console.log("No FCM token available");
+      await fetch("http://localhost:5000/api/auth/save-fcm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ fcmToken: token })
+      });
+      console.log("✅ FCM token saved:", token);
+    } catch (err) {
+      console.error("FCM error:", err);
+    }
+  }
+
+  // Handle login
+document.getElementById('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const loginBtn = document.getElementById('loginBtn');
+  loginBtn.disabled = true;
+  loginBtn.textContent = "Logging in...";
+  document.getElementById('message').style.display = 'none';
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+
+  if (!email || !password) {
+    showMessage("Please fill in all fields.");
+    resetButton();
+    return;
+  }
+
+  try {
+    // ✅ Request FCM token BEFORE sending login
+    let fcmToken = null;
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      fcmToken = await messaging.getToken({
+        vapidKey: "BBrUIaTwtbgJ217hXhWuWx3rpB4jU38qTqqjLmQMqZNX8t3p53mRNAUZBddCEoZRRyS2hfVwxj83T4AoBlMSyrc"
+      });
+      console.log("FCM Token:", fcmToken);
+    }
+
+    const res = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, fcmToken })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem('token', data.token);
+      window.location.href = data.user.role === 'admin' ? 'dashboard.html' : 'house.html';
+    } else {
+      showMessage(data.msg || "Invalid credentials.");
+      passwordInput.value = "";
+    }
+
+  } catch (err) {
+    showMessage("Server error. Please try again later.");
+    console.error(err);
+  }
+
+  resetButton();
+});
+
+
+  // Register Service Worker for FCM
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/public/firebase-messaging-sw.js')
+    .then(registration => {
+      console.log('✅ SW registered', registration);
+    })
+    .catch(err => console.error('❌ SW registration failed', err));
+}
+
+
+  // Handle foreground notifications
+  messaging.onMessage(payload => {
+    console.log('📩 Foreground message:', payload);
+    new Notification(payload.notification.title, {
+      body: payload.notification.body,
+      icon: '/icon.png'
+    });
+  });
+
+</script>
+
+</body>
+</html>

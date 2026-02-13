@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Signup</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #ffdde1, #ee9ca7);
+    }
+    .container {
+      background: #fff;
+      padding: 35px 30px;
+      border-radius: 20px;
+      box-shadow: 0px 8px 20px rgba(0,0,0,0.15);
+      width: 360px;
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h2 { margin-bottom: 20px; color: #444; font-size: 24px; }
+    form { display: flex; flex-direction: column; }
+    label {
+      text-align: left; margin: 8px 0 4px;
+      font-weight: 600; font-size: 14px; color: #555;
+    }
+    .input-group { position: relative; display: flex; align-items: center; }
+    .input-group i {
+      position: absolute; left: 12px; color: #ff7eb9; font-size: 15px;
+    }
+    .input-group input {
+      padding: 12px 12px 12px 38px; width: 100%;
+      border: 1px solid #ddd; border-radius: 10px;
+      margin-bottom: 15px; outline: none; font-size: 14px;
+      transition: 0.3s;
+    }
+    .input-group input:focus {
+      border-color: #ff4e88;
+      box-shadow: 0 0 6px rgba(255, 78, 136, 0.3);
+    }
+    .toggle-password {
+      position: absolute; right: 12px; cursor: pointer;
+      color: #888; transition: 0.3s;
+    }
+    .toggle-password:hover { color: #ff4e88; }
+    button {
+      background: linear-gradient(135deg, #ff7eb9, #ff4e88);
+      color: #fff; padding: 12px; border: none; border-radius: 10px;
+      cursor: pointer; font-size: 16px; font-weight: bold;
+      transition: 0.3s; margin-top: 5px;
+    }
+    button:hover {
+      background: linear-gradient(135deg, #ff4e88, #e84393);
+      transform: scale(1.05);
+    }
+    .signup { margin-top: 18px; font-size: 14px; color: #444; }
+    .signup a { color: #ff4e88; text-decoration: none; font-weight: 600; }
+    .signup a:hover { text-decoration: underline; }
+    .error { color: red; font-size: 13px; margin-bottom: 10px; }
+    .success { color: green; font-size: 13px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Signup</h2>
+    <form id="registerForm">
+      <div id="message"></div>
+
+      <label>Name:</label>
+      <div class="input-group">
+        <i class="fa fa-user"></i>
+        <input type="text" id="name" required>
+      </div>
+
+      <label>Email:</label>
+      <div class="input-group">
+        <i class="fa fa-envelope"></i>
+        <input type="email" id="email" required>
+      </div>
+
+      <label>Password:</label>
+      <div class="input-group">
+        <i class="fa fa-lock"></i>
+        <input type="password" id="password" required>
+        <i class="fa fa-eye toggle-password" id="togglePassword"></i>
+      </div>
+
+      <button type="submit">Register</button>
+    </form>
+    <div class="signup">
+      Already have an account? <a href="login.html">Login</a>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyD8DOpnDhFMXXVOscjhLoW3If0ZhlKUBpo",
+    authDomain: "staynotify-61da5.firebaseapp.com",
+    projectId: "staynotify-61da5",
+    storageBucket: "staynotify-61da5.appspot.com",
+    messagingSenderId: "580938949690",
+    appId: "1:580938949690:web:2b6234577a9cbe7aad4103",
+    measurementId: "G-RXTK4F53FS"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
+
+  // Request FCM token
+  async function getFCMToken() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return null;
+      const token = await messaging.getToken({
+        vapidKey: "BBrUIaTwtbgJ217hXhWuWx3rpB4jU38qTqqjLmQMqZNX8t3p53mRNAUZBddCEoZRRyS2hfVwxj83T4AoBlMSyrc"
+      });
+      return token;
+    } catch (err) {
+      console.error("FCM error:", err);
+      return null;
+    }
+  }
+
+  // Handle register form submit
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const messageDiv = document.getElementById('message');
+
+    if (!name || !email || !password) {
+      messageDiv.innerHTML = "<p class='error'>All fields are required!</p>";
+      return;
+    }
+
+    // 🔑 Get FCM token
+    const fcmToken = await getFCMToken();
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, fcmToken }) // ✅ send token
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('token', data.token);
+        messageDiv.innerHTML = `<p class='success'>${data.msg}</p>`;
+        setTimeout(() => { window.location.href = "login.html"; }, 1500);
+      } else {
+        messageDiv.innerHTML = `<p class='error'>${data.msg}</p>`;
+      }
+    } catch (err) {
+      messageDiv.innerHTML = "<p class='error'>Server error. Please try again later.</p>";
+    }
+  });
+   if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/public/firebase-messaging-sw.js')
+      .then((registration) => {
+        console.log("✅ SW registered", registration);
+      })
+      .catch((err) => {
+        console.error("❌ SW registration failed", err);
+      });
+      messaging.onMessage((payload) => {
+  console.log("📩 Foreground message:", payload);
+  new Notification(payload.notification.title, {
+    body: payload.notification.body,
+    icon: "/favicon.ico"
+  });
+});
+
+  }
+</script>
+</body>
+</html>

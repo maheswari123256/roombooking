@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel - House Types</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+    }
+    .sidebar {
+      width: 250px;
+      background: #343a40;
+      padding: 20px;
+      height: 100vh;
+    }
+    .sidebar a {
+      display: block;
+      padding: 10px;
+      color: white;
+      text-decoration: none;
+      margin: 5px 0;
+    }
+    .sidebar a:hover {
+      background: #495057;
+      border-radius: 5px;
+    }
+    .content {
+      flex: 1;
+      padding: 20px;
+      background: #f8f9fa;
+    }
+    td img {
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h3 class="text-white">Admin Panel</h3>
+    <a href="dashboard.html">🏠 Dashboard</a>
+    <a href="users.html">👤 Manage Users</a>
+    <a href="manage-properties.html">🏘 Manage Properties</a>
+    <a href="booking.html">📑 Manage Bookings</a>
+    <a href="reviews.html">⭐ Reviews</a>
+    <a href="amenities.html">🛠 Amenities</a>
+    <a href="house-types.html" class="bg-primary rounded">🏡 House Types</a> <!-- Active -->
+    <a href="login.html">🚪 Logout</a>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>🏡 Manage House Types</h2>
+      <button class="btn btn-secondary" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Add New House Type -->
+    <div class="card p-3 mb-4">
+      <div class="row g-2">
+        <div class="col-md-6">
+          <input type="text" id="newHouseType" class="form-control" placeholder="Enter new house type" required>
+        </div>
+        <div class="col-md-6">
+          <input type="text" id="newIcon" class="form-control" placeholder="Enter icon URL/path" required>
+        </div>
+        <div class="col-12 mt-2">
+          <button class="btn btn-primary w-100" onclick="addHouseType()">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- House Types Table -->
+    <div class="card p-3">
+      <h5>Available House Types</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Icon</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="houseTypesTable">
+          <tr><td colspan="3">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "login.html";
+    }
+
+    // Load House Types
+    function loadHouseTypes() {
+      fetch("http://localhost:5000/api/admin/house-types", {
+        headers: { "Authorization": "Bearer " + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const table = document.getElementById("houseTypesTable");
+        table.innerHTML = "";
+        if (!data.length) {
+          table.innerHTML = `<tr><td colspan="3">No house types found</td></tr>`;
+          return;
+        }
+        data.forEach(type => {
+          const row = `
+            <tr>
+              <td>${type.name}</td>
+              <td><img src="${type.icon}" alt="icon" width="32" height="32"></td>
+              <td>
+                <button class="btn btn-sm btn-warning" onclick="updateHouseType('${type._id}', '${type.name}', '${type.icon}')">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteHouseType('${type._id}')">Delete</button>
+              </td>
+            </tr>`;
+          table.innerHTML += row;
+        });
+      })
+      .catch(err => console.error("Error loading house types:", err));
+    }
+
+    // Add House Type
+    function addHouseType() {
+      const name = document.getElementById("newHouseType").value.trim();
+      const icon = document.getElementById("newIcon").value.trim();
+      if (!name || !icon) return alert("Please enter house type & icon");
+
+      fetch("http://localhost:5000/api/admin/house-types", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name, icon })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert("✅ House type added!");
+        document.getElementById("newHouseType").value = "";
+        document.getElementById("newIcon").value = "";
+        loadHouseTypes();
+      })
+      .catch(err => console.error("Error adding house type:", err));
+    }
+
+    // Update House Type
+    function updateHouseType(id, currentName, currentIcon) {
+      const newName = prompt("Edit house type:", currentName);
+      const newIcon = prompt("Edit icon URL/path:", currentIcon);
+      if (!newName || !newIcon) return;
+
+      fetch(`http://localhost:5000/api/admin/house-types/${id}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name: newName, icon: newIcon })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert("✅ House type updated!");
+        loadHouseTypes();
+      })
+      .catch(err => console.error("Error updating house type:", err));
+    }
+
+    // Delete House Type
+    function deleteHouseType(id) {
+      if (!confirm("Are you sure you want to delete this house type?")) return;
+
+      fetch(`http://localhost:5000/api/admin/house-types/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert("✅ House type deleted!");
+        loadHouseTypes();
+      })
+      .catch(err => console.error("Error deleting house type:", err));
+    }
+
+    // Logout
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    }
+
+    // Load data when page starts
+    loadHouseTypes();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

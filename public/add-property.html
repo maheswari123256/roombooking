@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Property</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    input, button {
+      display: block;
+      margin-bottom: 10px;
+      padding: 8px;
+      width: 300px;
+    }
+    .amenity-option {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .amenity-option img {
+      width: 20px;
+      height: 20px;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Add New Property</h2>
+
+  <form id="addForm">
+    <input type="text" placeholder="Title" id="title" required>
+    <input type="text" placeholder="Description" id="description" required>
+    <input type="text" placeholder="Location" id="location" required>
+    <input type="number" placeholder="Price (₹)" id="price" required>
+    <label for="houseType">Select House Type:</label>
+    <select id="houseType" required></select>
+    <h3>Guest Capacity</h3>
+   <input type="number" id="adults" placeholder="Max Adults" min="0" required>
+  <input type="number" id="children" placeholder="Max Children" min="0">
+  <input type="number" id="infants" placeholder="Max Infants" min="0">
+  <input type="number" id="pets" placeholder="Max Pets" min="0">
+  <label for="maxGuests">Max Guests Allowed:</label>
+  <input type="number" id="maxGuests" name="maxGuests" min="1" required>
+  <label>Upload Interior Images</label>
+  <input type="file" name="interior" id="interior" multiple required>
+  <label>Upload Exterior Images</label>
+  <input type="file" name="exterior" id="exterior" multiple required>
+    <div id="amenitiesContainer">
+      <strong>Select Amenities:</strong><br>
+    </div>
+
+    <button type="submit">Add Property</button>
+  </form>
+
+  <script>
+    async function loadAmenities() {
+      try {
+        const res = await fetch('http://localhost:5000/api/amenities');
+        if (!res.ok) throw new Error('Failed to fetch amenities');
+
+        const amenities = await res.json();
+        const container = document.getElementById('amenitiesContainer');
+
+        amenities.forEach(amenity => {
+          const div = document.createElement('div');
+          div.className = 'amenity-option';
+          div.innerHTML = `
+            <input type="checkbox" name="amenity" value="${amenity._id}">
+            <img src="${amenity.iconUrl}" alt="${amenity.type}" />
+            ${amenity.type}
+          `;
+          container.appendChild(div);
+        });
+
+      } catch (err) {
+        console.error('Amenity Load Error:', err);
+        alert('❌ Failed to load amenities');
+      }
+    }
+
+    loadAmenities();
+
+    async function loadHouseTypes() {
+  try {
+    const res = await fetch('http://localhost:5000/api/admin/house-types');
+    const types = await res.json();
+    const select = document.getElementById('houseType');
+
+    types.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t._id;
+      opt.textContent = t.name;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("House Type Load Error:", err);
+  }
+}
+loadHouseTypes();
+
+
+   document.getElementById('addForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('❌ You must be logged in to add a property');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", document.getElementById("title").value.trim());
+    formData.append("description", document.getElementById("description").value.trim());
+    formData.append("location", document.getElementById("location").value.trim());
+    formData.append("price", parseFloat(document.getElementById("price").value));
+        formData.append("houseType", document.getElementById("houseType").value);
+    formData.append("adults", document.getElementById("adults").value);
+    formData.append("children", document.getElementById("children").value);
+    formData.append("infants", document.getElementById("infants").value);
+    formData.append("pets", document.getElementById("pets").value);
+    formData.append("maxGuests", document.getElementById("maxGuests").value);
+
+    // Get selected amenities as a JSON string
+    const selectedAmenityIds = Array.from(
+      document.querySelectorAll('input[name="amenity"]:checked')
+    ).map(cb => cb.value);
+    formData.append("amenities", JSON.stringify(selectedAmenityIds)); // ✅ server parses this
+
+    // Combine both interior and exterior files
+    const interiorFiles = document.getElementById("interior").files;
+    const exteriorFiles = document.getElementById("exterior").files;
+
+    for (let file of interiorFiles) {
+      formData.append("interior", file);
+    }
+    for (let file of exteriorFiles) {
+      formData.append("exterior", file);
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/house/add', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}` // ✅ No content-type! Let browser set it
+        },
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('✅ Property added successfully!');
+        window.location.href = 'my-listing.html';
+       
+        
+      } else {
+        console.warn('⚠️ Backend Error:', data);
+        alert('❌ ' + (data.message || 'Failed to add property'));
+      }
+    } catch (err) {
+      console.error('❌ Request Error:', err);
+      alert('❌ Error adding property. Please try again later.');
+    }
+  });
+  </script>
+</body>
+</html>

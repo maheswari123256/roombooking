@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manage Amenities</title>
+  <style>
+    body{font-family:Arial;margin:20px;}
+    table{border-collapse:collapse;width:100%;}
+    th,td{border:1px solid #ccc;padding:8px;text-align:left;}
+    th{background:#f0f0f0;}
+    input{padding:6px;margin-right:6px}
+    button{padding:4px 8px;margin-right:4px}
+    a{margin-right:10px}
+    img{width:40px}
+  </style>
+</head>
+<body>
+  <h1>Amenities</h1>
+  <a href="dashboard.html">⬅ Dashboard</a>
+
+  <!-- add form -->
+  <div style="margin:20px 0">
+    <input id="newType" placeholder="Amenity name">
+    <input id="newIcon" placeholder="Icon URL">
+    <button onclick="addAmenity()">Add</button>
+  </div>
+
+  <table id="amenityTable">
+    <thead>
+      <tr><th>Name</th><th>Icon</th><th>Action</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const token  = localStorage.getItem("token");
+    const headers= { "Content-Type":"application/json", Authorization:"Bearer "+token };
+
+    async function loadAmenities(){
+      const res  = await fetch("http://localhost:5000/api/admin/amenities",{headers});
+      const data = await res.json();
+      const tbody= document.querySelector("#amenityTable tbody");
+      tbody.innerHTML="";
+
+      if(!data.length){
+        tbody.innerHTML="<tr><td colspan='3'>No amenities</td></tr>";
+        return;
+      }
+
+      data.forEach(amenity=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML=`
+          <td><input value="${amenity.type}" onchange="updateAmenity('${amenity._id}',this.value,'${amenity.iconUrl}')"></td>
+          <td>
+            <img src="${amenity.iconUrl||''}" alt="">
+            <input value="${amenity.iconUrl||''}" style="width:70%" onchange="updateAmenity('${amenity._id}','${amenity.type}',this.value)">
+          </td>
+          <td><button onclick="delAmenity('${amenity._id}')">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function addAmenity(){
+      const type=document.getElementById("newType").value.trim();
+      const icon=document.getElementById("newIcon").value.trim();
+      if(!type) return alert("Enter amenity name");
+      await fetch("http://localhost:5000/api/admin/amenities",{
+        method:"POST",
+        headers,
+        body:JSON.stringify({ type, iconUrl:icon })
+      });
+      document.getElementById("newType").value="";
+      document.getElementById("newIcon").value="";
+      loadAmenities();
+    }
+
+    async function updateAmenity(id,type,iconUrl){
+      await fetch("/api/admin/amenities/"+id,{
+        method:"PUT",
+        headers,
+        body:JSON.stringify({ type, iconUrl })
+      });
+    }
+
+    async function delAmenity(id){
+      if(!confirm("Delete amenity?"))return;
+      await fetch("http://localhost:5000/api/admin/amenities/"+id,{method:"DELETE",headers});
+      loadAmenities();
+    }
+
+    window.onload = loadAmenities;
+  </script>
+</body>
+</html>

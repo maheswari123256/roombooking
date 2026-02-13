@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: Arial, sans-serif;
+    }
+    .sidebar {
+      height: 100vh;
+      background: #343a40;
+      color: #fff;
+      padding: 20px;
+      position: fixed;
+      width: 220px;
+    }
+    .sidebar a {
+      display: block;
+      padding: 10px;
+      color: #adb5bd;
+      text-decoration: none;
+      margin: 5px 0;
+      border-radius: 5px;
+    }
+    .sidebar a:hover {
+      background: #495057;
+      color: #fff;
+    }
+    .content {
+      margin-left: 240px;
+      padding: 20px;
+    }
+    .card {
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .quick-actions button {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h3 class="text-white">Admin Panel</h3>
+    <a href="dashboard.html">🏠 Dashboard</a>
+    <a href="users.html">👤 Manage Users</a>
+    <a href="manage-properties.html">🏘 Manage Properties</a>
+    <a href="booking.html">📑 Manage Bookings</a>
+    <a href="reviews.html">⭐ Reviews</a>
+    <a href="amenities.html">🛠 Amenities</a>
+    <a href="house-types.html">🏡 House Types</a>
+    <a href="login.html">🚪 Logout</a>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>Welcome, Admin</h2>
+      <div class="dropdown">
+        <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+         Logout 
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="login.html">Logout</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card text-center p-3">
+          <h5>Total Users</h5>
+          <h3 id="usersCount">0</h3>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-3 bg-warning-subtle">
+          <h5>Total Properties</h5>
+          <h3 id="propertyCount">0</h3>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-3 bg-success-subtle">
+          <h5>Total Bookings</h5>
+          <h3 id="bookingCount">0</h3>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-3 bg-info-subtle">
+          <h5>Total Reviews</h5>
+          <h3 id="reviewCount">0</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts + Quick Actions -->
+    <div class="row g-4">
+      <div class="col-md-8">
+        <div class="card p-3">
+          <h5>📈 Bookings Overview</h5>
+          <canvas id="bookingsChart"></canvas>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-3 quick-actions">
+          <h5>⚡ Quick Actions</h5>
+          <button class="btn btn-primary">Add Amenity</button>
+          <button class="btn btn-success">Approve Property</button>
+          <button class="btn btn-danger">Refund Booking</button>
+          <button class="btn btn-secondary">Create Admin</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Bookings -->
+    <div class="card mt-4 p-3">
+      <h5>📑 Recent Bookings</h5>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Property</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="recentBookings">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    
+    // Dashboard stats
+    fetch('http://localhost:5000/api/admin/dashboard', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('usersCount').innerText = data.usersCount;
+      document.getElementById('propertyCount').innerText = data.propertyCount;
+      document.getElementById('bookingCount').innerText = data.bookingCount;
+      document.getElementById('reviewCount').innerText = data.reviewCount || 0;
+    });
+
+    // Bookings Overview Chart
+    const ctx = document.getElementById('bookingsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul"],
+        datasets: [{
+          label: "Bookings",
+          data: [10,20,30,25,40,35,50], // replace with API data
+          borderColor: "#007bff",
+          backgroundColor: "rgba(0,123,255,0.1)",
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } }
+      }
+    });
+
+  // Recent Bookings
+fetch('http://localhost:5000/api/admin/booking', {
+  headers: { 'Authorization': 'Bearer ' + token }
+})
+.then(res => res.json())
+.then(bookings => {
+  const table = document.getElementById('recentBookings');
+  table.innerHTML = "";
+  
+  if (!bookings.length) {
+    table.innerHTML = `<tr><td colspan="6">No bookings found.</td></tr>`;
+    return;
+  }
+
+  bookings.slice(0,5).forEach(b => {
+    const row = `
+      <tr>
+        <td>${b.userId?.email || "N/A"}</td>
+        <td>${b.houseId?.title || "N/A"}</td>
+        <td>${new Date(b.checkOut).toLocaleDateString()}</td>
+        <td>₹${b.totalAmount || 0}</td>
+        <td>${b.bookingStatus || "Pending"}</td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="cancelBooking('${b._id}')">Cancel</button>
+        </td>
+      </tr>`;
+    table.innerHTML += row;
+  });
+})
+.catch(err => {
+  console.error("❌ Error fetching bookings:", err);
+  document.getElementById('recentBookings').innerHTML =
+    `<tr><td colspan="6">Error loading bookings</td></tr>`;
+});
+
+// Cancel Booking Function
+function cancelBooking(bookingId) {
+  if (!confirm("Are you sure you want to cancel this booking?")) return;
+
+  fetch(`http://localhost:5000/api/admin/booking/${bookingId}`, {
+    method: "DELETE",
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert("✅ Booking cancelled successfully");
+    location.reload(); // refresh bookings table
+  })
+  .catch(err => {
+    console.error("❌ Error cancelling booking:", err);
+    alert("Failed to cancel booking");
+  });
+}
+
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

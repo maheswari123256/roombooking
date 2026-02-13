@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #f8f9fa; 
+        }
+        .sidebar { height: 100vh; background-color:#ff385c; color:white; padding:20px; } 
+        .sidebar a { color:white; display:block; padding:10px 0; text-decoration: none; } 
+        .sidebar a:hover { background-color: #ff385c; border-radius:5px; } 
+        .main-content { padding:30px; } 
+        .card { margin-bottom: 20px; background-color:#ffffff; border: 1px solid #dee2e6; border-radius: 10px; } 
+        .card-text { font-size:24px; font-weight: bold; } 
+        /* ✅ Top-right button */ 
+        header .actions button { 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            border: 1px solid #ddd; 
+            cursor: pointer; 
+            background-color: white; 
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex position-relative">
+        <div class="sidebar">
+            <h3>Host Panel</h3>
+            <a href="add-property.html">Add new Property</a>
+            <a href="my-listing.html">My Listings</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+
+       <div class="main-content flex-grow-1">
+            <!-- ✅ Switch to travelling button -->
+            <div class="top-actions d-flex justify-content-end mb-3">
+            <button class="btn btn-outline-dark rounded-pill" onclick="window.location.href='house.html'">
+              Switch to travelling
+             </button>
+            </div>
+            <h2>Welcome, Host!</h2>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Bookings</h5>
+                            <p class="card-text" id="totalBookings">0</p>   
+                        </div>
+                    </div>  
+                </div> 
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Pending Requests</h5>
+                            <p class="card-text" id="pendingRequests">0</p>
+                        </div>   
+                    </div>  
+                </div> 
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Earnings</h5>
+                            <p class="card-text" id="earnings">0</p> 
+                        </div>  
+                    </div>  
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      function logout(){
+        localStorage.removeItem('token');
+        window.location.href='login.html';
+      }  
+
+      async function loadDashboardStats() {
+        const res = await fetch("/api/hostStats/dashboard", {
+          headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+        });
+        const data = await res.json();
+        document.getElementById("totalBookings").innerText = data.totalBookings;
+        document.getElementById("pendingRequests").innerText = data.pendingRequests;
+        document.getElementById("earnings").innerText = data.totalEarnings;
+      }
+      window.onload = loadDashboardStats;
+    </script>
+</body>
+</html>

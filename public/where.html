@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Where Search</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f7f7f7;
+      padding: 40px;
+    }
+
+    /* ===== SEARCH ===== */
+    .search-container {
+      position: relative;
+      width: 320px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 30px;
+      border: 1px solid #ddd;
+      background: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .destination-box {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      display: none;
+      z-index: 999;
+    }
+
+    .destination-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .destination-item {
+      padding: 12px;
+      cursor: pointer;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .destination-item:hover {
+      background: #f7f7f7;
+    }
+
+    .title {
+      font-weight: bold;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #777;
+    }
+
+    /* ===== RESULTS ===== */
+    #resultTitle {
+      margin-top: 40px;
+      margin-bottom: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    #houseList {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .house-card {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+
+    .house-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .house-card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+
+    .house-info {
+      padding: 12px;
+    }
+
+    .house-info h4 {
+      margin: 0 0 6px;
+    }
+
+    .price {
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Search -->
+  <div class="search-container">
+    <button class="btn" id="whereBtn">Where</button>
+    <div class="destination-box" id="destinationBox">
+      <ul class="destination-list" id="destinationList"></ul>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <h2 id="resultTitle"></h2>
+  <div id="houseList">Loading houses...</div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const whereBtn = document.getElementById("whereBtn");
+      const destinationBox = document.getElementById("destinationBox");
+      const destinationList = document.getElementById("destinationList");
+      const resultTitle = document.getElementById("resultTitle");
+      const houseList = document.getElementById("houseList");
+
+      // ===== OPEN DESTINATION LIST =====
+      whereBtn.addEventListener("click", async (e) => {
+        e.stopPropagation(); // Prevent closing immediately
+        destinationBox.style.display =
+          destinationBox.style.display === "block" ? "none" : "block";
+
+        try {
+          const res = await fetch("http://localhost:5000/api/destinations");
+          const destinations = await res.json();
+
+          destinationList.innerHTML = "";
+          destinations.forEach(dest => {
+            const li = document.createElement("li");
+            li.className = "destination-item";
+            li.innerHTML = `
+              <div class="title">${dest.title}</div>
+              <div class="subtitle">${dest.subtitle || ""}</div>
+            `;
+            li.onclick = () => {
+              window.location.href =
+                `where.html?location=${encodeURIComponent(dest.title)}`;
+            };
+            destinationList.appendChild(li);
+          });
+        } catch(err) {
+          console.error("Failed to load destinations", err);
+        }
+      });
+
+      // Close dropdown if click outside
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".search-container")) {
+          destinationBox.style.display = "none";
+        }
+      });
+
+      // ===== LOAD HOUSES BASED ON QUERY =====
+      const params = new URLSearchParams(window.location.search);
+      const locationName = params.get("location");
+
+      if (locationName) {
+        whereBtn.innerText = locationName;
+        resultTitle.innerText = `${locationName} - Available Houses`;
+        loadHouses(locationName);
+      }
+
+      async function loadHouses(location) {
+        houseList.innerHTML = "Loading houses...";
+        try {
+          const res = await fetch(
+            `http://localhost:5000/api/house/by-location?location=${encodeURIComponent(location)}`
+          );
+          const houses = await res.json();
+
+          houseList.innerHTML = "";
+
+          if (!houses.length) {
+            houseList.innerHTML = "<p>No houses available</p>";
+            return;
+          }
+
+          houses.forEach(house => {
+            const img = house.images?.[0]?.urls?.[0] || "https://via.placeholder.com/300x200";
+
+            const card = document.createElement("div");
+            card.className = "house-card";
+
+            card.innerHTML = `
+              <img src="${img}">
+              <div class="house-info">
+                <h4>${house.title}</h4>
+                <p>${house.location}</p>
+                <div class="price">₹${house.pricePerNight}/night</div>
+              </div>
+            `;
+
+            card.onclick = () => {
+              window.location.href =
+                `house-details.html?houseId=${house._id}`;
+            };
+
+            houseList.appendChild(card);
+          });
+        } catch(err) {
+          console.error("Failed to load houses", err);
+          houseList.innerHTML = "<p>Failed to load houses</p>";
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>

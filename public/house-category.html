@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Houses by Type</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .house-card { display: inline-block; border: 1px solid #ddd; border-radius: 10px; margin: 10px; padding: 10px; width: 250px; vertical-align: top; }
+    .house-card img { width: 100%; height: 150px; object-fit: cover; border-radius: 6px; }
+    .house-card h3 { margin: 10px 0 5px; }
+    .view-details { display: inline-block; margin-top: 10px; padding: 5px 10px; background-color: #007bff; color: white; border-radius: 5px; text-decoration: none; }
+    .view-details:hover { background-color: #0056b3; }
+  </style>
+</head>
+<body>
+  <h1>Houses of Selected Type</h1>
+  <div id="housesContainer">Loading...</div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const typeId = urlParams.get("typeId");
+
+    async function loadHousesByType() {
+      const container = document.getElementById("housesContainer");
+      if (!typeId) {
+        container.innerHTML = "No house type selected.";
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/house/by-type/${typeId}`);
+        const houses = await res.json();
+
+        if (!houses.length) {
+          container.innerHTML = "No houses found for this type.";
+          return;
+        }
+
+        container.innerHTML = houses.map(h => `
+          <div class="house-card">
+            <img src="${h.images?.[0]?.urls?.[0] || 'https://via.placeholder.com/250x150?text=No+Image'}" alt="${h.title}" />
+            <h3>${h.title}</h3>
+            <p>${h.description || ''}</p>
+            <p>₹${h.pricePerNight}</p>
+            <a class="view-details" href="house-details.html?houseId=${h._id}">View Details</a>
+          </div>
+        `).join('');
+
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = "Error loading houses.";
+      }
+    }
+
+    loadHousesByType();
+  </script>
+</body>
+</html>

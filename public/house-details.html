@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>House Details</title>
+
+  <!-- Razorpay -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <!-- Flatpickr CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <style>
+    /* your existing styles unchanged */
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .images-container img { max-width: 300px; margin: 10px; border-radius: 10px; }
+    .info-box { margin-top: 20px; }
+    #bookingForm { margin-top: 30px; }
+    button { padding: 10px 20px; background-color: #4CAF50; border: none; color: white; border-radius: 6px; cursor: pointer; }
+    #bookingMessage { margin-top: 15px; font-weight: bold; }
+    .amenity { display: inline-flex; align-items: center; margin: 5px 10px 5px 0; }
+    .amenity img { width: 54px; height: 54px; margin-right: 5px; object-fit: contain; }
+    .amenity span { font-size: 14px; }
+    .guest-box { border: 1px solid #ddd; padding: 10px; border-radius: 6px; max-width: 300px; margin-top: 10px; }
+    .guest-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+    .guest-row span { flex: 1; }
+    .guest-row button { width: 30px; height: 30px; background: #f5f5f5; color: black; border: 1px solid #aaa; font-size: 18px; line-height: 1; border-radius: 4px; cursor: pointer; }
+     .date-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Label */
+.date-container label {
+  font-weight: 600;
+  color: #444;
+  font-size: 15px;
+}
+
+/* Input wrapper for icon */
+.date-input-wrapper {
+  position: relative;
+}
+
+.date-input-wrapper i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  pointer-events: none;
+  font-size: 18px;
+}
+
+/* Input styling */
+.date-container input {
+  padding: 10px 15px 10px 38px; /* extra left padding for icon */
+  border: none;
+  border-radius: 50px;
+  font-size: 15px;
+  background: linear-gradient(145deg, #ffffff, #f1f1f1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+/* Hover effect */
+.date-container input:hover {
+  box-shadow: 0 4px 12px rgba(255, 56, 92, 0.4);
+}
+
+/* Focus effect */
+.date-container input:focus {
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(255, 56, 92, 0.5);
+  border: 2px solid #ff385c;
+}
+/* Container for labels & inputs */
+label {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #444;
+  margin-right: 8px;
+}
+
+/* Input styling */
+input[type="text"] {
+  padding: 10px 15px;
+  border-radius: 50px; /* pill shape */
+  border: 2px solid #ddd;
+  font-size: 15px;
+  font-family: 'Poppins', sans-serif;
+  background: #fff;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+/* Hover effect */
+input[type="text"]:hover {
+  border-color: #ff385c;
+  box-shadow: 0 4px 14px rgba(255,56,92,0.3);
+}
+
+/* Focus effect */
+input[type="text"]:focus {
+  border-color: #ff385c;
+  box-shadow: 0 4px 14px rgba(255,56,92,0.5);
+}
+
+/* Add spacing between fields */
+#checkIn {
+  margin-right: 20px;
+}
+
+
+/* Modern Airbnb-style Flatpickr */
+.flatpickr-calendar {
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  border: none;
+  overflow: hidden;
+}
+
+/* Selected day & range edges */
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background: linear-gradient(135deg, #ff385c, #ff637d);
+  color: white !important;
+  font-weight: bold;
+  border-radius: 50% !important;
+  transform: scale(1.1);
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 6px rgba(255, 56, 92, 0.5);
+}
+
+/* Dates between check-in and check-out */
+.flatpickr-day.inRange {
+  background: rgba(255, 56, 92, 0.1);
+  color: #333;
+  transition: background 0.2s ease;
+}
+
+/* Hover effect for available dates */
+.flatpickr-day:not(.disabled):hover {
+  background: #ff385c;
+  color: white;
+  border-radius: 50% !important;
+  transform: scale(1.05);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Month and Year title */
+.flatpickr-current-month {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Weekdays header */
+.flatpickr-weekdays {
+  background: #fff5f7;
+  font-weight: bold;
+  color: #ff385c;
+}
+
+
+    /* date inputs + flatpickr theme (unchanged) */
+    /* ... your existing CSS from the message ... */
+  </style>
+</head>
+<body>
+  <h1>🏡 House Details</h1>
+  <div id="details">Loading house details...</div>
+
+  <!-- Booking form -->
+  <form id="bookingForm">
+    <input type="hidden" id="houseId" />
+
+    <label>Check-in:</label>
+    <input type="text" id="checkIn" placeholder="Select check-in date" required />
+
+    <label>Check-out:</label>
+    <input type="text" id="checkOut" placeholder="Select check-out date" required />
+
+    <br /><br />
+    <label>Guests:</label>
+    <div class="guest-box">
+      <div class="guest-row" data-type="adults">
+        <span>Adults <small>(13+)</small></span>
+        <button type="button" class="guest-btn minus" onclick="updateGuest('adults', -1)">-</button>
+        <span id="adults">1</span>
+        <button type="button" class="guest-btn plus" onclick="updateGuest('adults', 1)">+</button>
+      </div>
+      <div class="guest-row" data-type="children">
+        <span>Children <small>(2–12)</small></span>
+        <button type="button" class="guest-btn minus" onclick="updateGuest('children', -1)">-</button>
+        <span id="children">0</span>
+        <button type="button" class="guest-btn plus" onclick="updateGuest('children', 1)">+</button>
+      </div>
+      <div class="guest-row" data-type="infants">
+        <span>Infants <small>(Under 2)</small></span>
+        <button type="button" class="guest-btn minus" onclick="updateGuest('infants', -1)">-</button>
+        <span id="infants">0</span>
+        <button type="button" class="guest-btn plus" onclick="updateGuest('infants', 1)">+</button>
+      </div>
+      <div class="guest-row" data-type="pets">
+        <span>Pets</span>
+        <button type="button" class="guest-btn minus" onclick="updateGuest('pets', -1)">-</button>
+        <span id="pets">0</span>
+        <button type="button" class="guest-btn plus" onclick="updateGuest('pets', 1)">+</button>
+      </div>
+    </div>
+
+    <!-- Hidden inputs should live at form root, not inside a row -->
+    <input type="hidden" id="guestAdults" name="adults" value="1" />
+    <input type="hidden" id="guestChildren" name="children" value="0" />
+    <input type="hidden" id="guestInfants" name="infants" value="0" />
+    <input type="hidden" id="guestPets" name="pets" value="0" />
+    <input type="hidden" id="guests" name="guests" value="1" />
+
+    <br />
+    <button type="button" onclick="checkAvailability()">Check Availability</button>
+    <p id="availabilityMsg"></p>
+
+    <br /><br />
+    <button type="submit">Book & Pay</button>
+  </form>
+
+  <p id="bookingMessage"></p>
+
+  <!-- Checkout done banner -->
+  <div id="checkoutMessage" style="display:none; margin:20px 0; padding:10px; background:#e6ffe6; border:1px solid #28a745; border-radius:5px;">
+    ✅ Your stay is completed. You can now leave a review.
+  </div>
+
+  <!-- Reviews Area (list + summary) -->
+  <section id="reviewsArea" style="margin-top:28px;">
+    <h2>Guest Reviews</h2>
+    <div id="ratingSummary" style="font-weight:600; margin:8px 0;">
+      <span id="averageRating">—</span>
+      <span id="totalReviews"></span>
+    </div>
+    <div id="reviewsList"></div>
+  </section>
+
+  <!-- Single, clean Review Form (hidden until eligible) -->
+  <section id="reviewFormContainer" style="display:none; margin-top:18px;">
+    <h3>Leave a Review</h3>
+    <form id="reviewForm">
+      <label for="rating">Rating</label><br />
+      <select id="rating" required>
+        <option value="5">⭐ 5</option>
+        <option value="4">⭐ 4</option>
+        <option value="3">⭐ 3</option>
+        <option value="2">⭐ 2</option>
+        <option value="1">⭐ 1</option>
+      </select>
+      <br /><br />
+      <label for="comment">Comment</label><br />
+      <textarea id="comment" rows="4" cols="50" placeholder="Share details about cleanliness, location, host responsiveness…" required></textarea>
+      <br /><br />
+      <button type="submit">Submit Review</button>
+      <p id="reviewMessage"></p>
+    </form>
+  </section>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+<script type="module" src="/firebase.js"></script>
+  <script>
+    // ----------------- Auth & IDs -----------------
+    // Get token
+const token = localStorage.getItem('token');
+
+// ✅ Get houseId from URL (matches the link ?houseId=...)
+const urlParams = new URLSearchParams(window.location.search);
+const houseId = urlParams.get("houseId");  // use 'houseId', not 'id'
+
+if (!token) {
+  alert("❌ Unauthorized access. Please login again.");
+  window.location.href = "login.html";
+}
+
+if (!houseId) {
+  alert("❌ No house selected.");
+  window.location.href = "house-category.html";
+}
+
+// Now you can safely use houseId to fetch details
+fetch(`http://localhost:5000/api/house/${houseId}`, {
+  headers: { "Authorization": `Bearer ${token}` }
+})
+.then(res => res.json())
+.then(data => {
+  console.log("House details:", data);
+  // Populate your page with house details
+})
+.catch(err => {
+  console.error("Failed to load house details:", err);
+});
+
+
+    // ----------------- House details -----------------
+    async function loadHouseDetails() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/house/${houseId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("Fetch failed:", res.status, errText);
+          alert("❌ Failed to load house details: " + res.status);
+          return;
+        }
+        const house = await res.json();
+
+        const imgHtml = Array.isArray(house.images)
+          ? house.images.map(img =>
+              (img.urls || []).map(url => `<img src="${url}" alt="House image" />`).join("")
+            ).join("")
+          : "";
+
+        document.getElementById("details").innerHTML = `
+          <h2>${house.title}</h2>
+          <p>${house.description || ""}</p>
+          <p><strong>Location:</strong> ${house.location || "-"}</p>
+          <p><strong>Price:</strong> ₹${house.pricePerNight || "-"}</p>
+          <div class="images-container">${imgHtml || "<p>No images available</p>"}</div>
+          ${imgHtml ? `<button type="button" id="showAllPhotosBtn">Show all photos</button>` : ""}
+          <div class="info-box">
+            <strong>Amenities:</strong>
+            <div id="amenitiesBox"></div>
+          </div>
+        `;
+
+        // Show all photos -> photo tour page
+        const btn = document.getElementById('showAllPhotosBtn');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            const images = Array.from(document.querySelectorAll('.images-container img')).map(img => img.src);
+            localStorage.setItem('photoTourImages', JSON.stringify(images));
+            window.location.href = "photo-tour.html";
+          });
+        }
+
+        // Amenities
+        const amenitiesBox = document.getElementById("amenitiesBox");
+        amenitiesBox.innerHTML =
+          Array.isArray(house.amenities) && house.amenities.length
+            ? house.amenities.map(a => `
+                <div class="amenity">
+                  <img src="${(a?.iconUrl || '').trim() || 'https://via.placeholder.com/54?text=%3F'}" alt="${a?.type || 'Amenity'}" />
+                  <span>${(a?.type || 'Amenity')}</span>
+                </div>
+              `).join('')
+            : "<i>No amenities listed</i>";
+
+      } catch (err) {
+        alert("❌ Error loading house.");
+        console.error("House load error:", err);
+      }
+    }
+
+    // ----------------- Flatpickr -----------------
+    let checkInPicker, checkOutPicker;
+
+checkOutPicker = flatpickr("#checkOut", {
+  dateFormat: "Y-m-d",
+  minDate: new Date().fp_incr(1)
+});
+
+checkInPicker = flatpickr("#checkIn", {
+  minDate: "today",
+  dateFormat: "Y-m-d",
+  onChange: function(selectedDates) {
+    if (selectedDates.length > 0) {
+      const minCheckoutDate = new Date(selectedDates[0]);
+      minCheckoutDate.setDate(minCheckoutDate.getDate() + 1);
+      checkOutPicker.set("minDate", minCheckoutDate);
+      if (checkOutPicker.selectedDates[0] && checkOutPicker.selectedDates[0] <= selectedDates[0]) {
+        checkOutPicker.clear();
+      }
+    }
+  }
+});
+
+    // ----------------- Availability -----------------
+  async function checkAvailability() {
+  const from = new Date(document.getElementById("checkIn").value).toISOString();
+  const to = new Date(document.getElementById("checkOut").value).toISOString();
+  const msg = document.getElementById("availabilityMsg");
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/house/${houseId}/check?from=${from}&to=${to}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    msg.textContent = data.available
+      ? "✅ Available! You can proceed to book."
+      : `❌ Not Available: ${data.reason}`;
+  } catch (err) {
+    console.error(err);
+    msg.textContent = "❌ Error checking availability.";
+  }
+}
+
+
+
+    // ----------------- Guests helper -----------------
+    function updateGuest(type, delta) {
+      const el = document.getElementById(type);
+      const current = Math.max(0, (parseInt(el.textContent, 10) || 0) + delta);
+      el.textContent = current;
+      // sync hidden inputs
+      document.getElementById("guestAdults").value   = document.getElementById("adults").textContent;
+      document.getElementById("guestChildren").value = document.getElementById("children").textContent;
+      document.getElementById("guestInfants").value  = document.getElementById("infants").textContent;
+      document.getElementById("guestPets").value     = document.getElementById("pets").textContent;
+      document.getElementById("guests").value        = (
+        parseInt(document.getElementById("adults").textContent,10) +
+        parseInt(document.getElementById("children").textContent,10)
+      );
+    }
+    window.updateGuest = updateGuest; // keep onclick working
+
+    // ----------------- Booking & Payment -----------------
+    document.getElementById("bookingForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const adults = parseInt(document.getElementById("adults").textContent, 10) || 0;
+      const children = parseInt(document.getElementById("children").textContent, 10) || 0;
+      const infants = parseInt(document.getElementById("infants").textContent, 10) || 0;
+      const pets = parseInt(document.getElementById("pets").textContent, 10) || 0;
+      const guests = { adults, children, infants, pets };
+
+      const checkIn = document.getElementById("checkIn").value;
+      const checkOut = document.getElementById("checkOut").value;
+
+      try {
+        const res = await fetch("http://localhost:5000/api/booking/booking", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json", 
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ houseId, checkIn, checkOut, guests })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          alert("❌ Booking failed: " + (data.message || "Unknown error"));
+          return;
+        }
+
+        const options = {
+          key: "rzp_test_FDd41HKKDTunDa",
+          amount: data.amount,
+          currency: "INR",
+          name: "House Booking",
+          description: "Payment for house booking",
+          order_id: data.orderId,
+          handler: function (response) { verifyPayment(response, data.bookingId); },
+          theme: { color: "#2c7be5" }
+        };
+        new Razorpay(options).open();
+      } catch (err) {
+        console.error("❌ Booking error:", err);
+        alert("❌ Booking error occurred.");
+      }
+    });
+
+    async function verifyPayment(response, bookingId) {
+      try {
+        const verifyRes = await fetch("http://localhost:5000/api/booking/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            bookingId,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature
+          })
+        });
+
+        const verifyData = await verifyRes.json();
+        if (verifyRes.ok) {
+          document.getElementById("bookingMessage").textContent = "✅ Booking Confirmed!";
+          await checkReviewEligibility(); // show review form if eligible
+          loadReviews();                  // refresh reviews (just in case)
+        } else {
+          document.getElementById("bookingMessage").textContent =
+            "❌ Payment verification failed: " + (verifyData.message || "");
+        }
+      } catch (error) {
+        console.error("❌ Verification error", error);
+        document.getElementById("bookingMessage").textContent = "❌ Server Error during payment verification.";
+      }
+    }
+
+    // ----------------- Checkout banner (optional) -----------------
+    // Use bookingId instead of houseId
+(async function checkCheckout() {
+  const completedBookingId = localStorage.getItem("completedBookingId"); 
+  if (!completedBookingId) return;
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/booking/checkout-status/${completedBookingId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data?.bookingStatus === "Completed") {
+      document.getElementById("checkoutMessage").style.display = "block";
+    }
+  } catch (err) {
+    console.error("Error fetching checkout status:", err);
+  }
+})();
+
+
+    // ----------------- Reviews: list & summary -----------------
+    async function loadReviews() {
+      const avgEl = document.getElementById("averageRating");
+      const totalEl = document.getElementById("totalReviews");
+      const listEl = document.getElementById("reviewsList");
+      if (!avgEl || !listEl) return; // container missing => do nothing
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/reviews/house/${houseId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error("Failed to load reviews", data);
+          avgEl.textContent = "⚠️ Could not load reviews.";
+          totalEl.textContent = "";
+          return;
+        }
+
+        const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+        const avg = typeof data.avgRating === "number" ? data.avgRating : (reviews.length ? (reviews.reduce((s,r)=>s+(r.rating||0),0)/reviews.length) : 0);
+        avgEl.textContent = reviews.length ? `⭐ ${avg.toFixed(2)} / 5` : "No reviews yet.";
+        totalEl.textContent = reviews.length ? ` • ${reviews.length} review${reviews.length>1?'s':''}` : "";
+
+        listEl.innerHTML = reviews.map(r => `
+          <div style="border-bottom:1px solid #eee; padding:10px 0;">
+            <strong>${r.userId?.name || "Anonymous"}</strong> – ⭐ ${r.rating || "-"} / 5
+            <p style="margin:6px 0 0;">${(r.comment || "").replace(/</g,"&lt;")}</p>
+          </div>
+        `).join("");
+
+      } catch (err) {
+        console.error("Error loading reviews:", err);
+        avgEl.textContent = "⚠️ Error loading reviews.";
+        totalEl.textContent = "";
+      }
+    }
+
+    // ----------------- Eligibility: show/hide form -----------------
+    async function checkReviewEligibility() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/reviews/eligible/${houseId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const box = document.getElementById("reviewFormContainer");
+        if (!box) return;
+
+        if (data?.eligible) {
+          localStorage.setItem("completedBookingId", data.bookingId);
+          box.style.display = "block";
+        } else {
+          box.style.display = "none";
+        }
+      } catch (e) {
+        console.error("eligibility error", e);
+      }
+    }
+
+    // ----------------- Submit review -----------------
+    document.getElementById("reviewForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const bookingId = localStorage.getItem("completedBookingId");
+      if (!bookingId) {
+        document.getElementById("reviewMessage").textContent = "⚠️ You are not eligible to review yet.";
+        return;
+      }
+      const rating = document.getElementById("rating").value;
+      const comment = document.getElementById("comment").value;
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/reviews/${bookingId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ rating: Number(rating), comment })
+        });
+        const data = await res.json();
+
+        document.getElementById("reviewMessage").textContent = data.message || (res.ok ? "✅ Review submitted" : "❌ Failed to submit review");
+        if (res.ok) {
+          (e.target).reset();
+          loadReviews();
+          // optionally hide form after submit (one review per booking)
+          document.getElementById("reviewFormContainer").style.display = "none";
+        }
+      } catch (err) {
+        document.getElementById("reviewMessage").textContent = "❌ Error submitting review.";
+        console.error("Review submit error:", err);
+      }
+    });
+
+    // ----------------- Boot -----------------
+    (async function init() {
+      await loadHouseDetails();
+      await loadReviews();
+      await checkReviewEligibility();
+    })();
+  </script>
+</body>
+</html>
+ 
+ 
+
